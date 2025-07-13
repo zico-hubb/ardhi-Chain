@@ -46,7 +46,6 @@ export default function LandownerPage() {
             });
           }
         } catch (err) {
-          // Skip if token doesn't exist or fails
           continue;
         }
       }
@@ -117,4 +116,24 @@ export default function LandownerPage() {
                   <td>{land.location}</td>
                   <td>{land.size}</td>
                   <td>
-                    <a href={land.uri} target="_blank" rel="nore_
+                    <a href={land.uri} target="_blank" rel="noopener noreferrer">
+                      View Metadata
+                    </a>
+                  </td>
+                  <td>
+                    {land.image ? (
+                      <img src={land.image} alt="Title Deed" width="60" />
+                    ) : (
+                      'N/A'
+                    )}
+                  </td>
+                  <td>{land.owner}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </main>
+    </div>
+  );
+}
