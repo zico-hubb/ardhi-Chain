@@ -26,27 +26,35 @@ export default function LandownerPage() {
       const signer = await provider.getSigner();
       const contract = new Contract(CONTRACT_ADDRESS, contractABI.abi, signer);
 
-      const balance = await contract.balanceOf(walletAddress);
+      const total = await contract.nextTokenId();
       const ownedNFTs = [];
 
-      for (let i = 0; i < Number(balance); i++) {
-        const tokenId = await contract.tokenOfOwnerByIndex(walletAddress, i);
-        const land = await contract.getLandDetails(tokenId);
+      for (let tokenId = 0; tokenId < Number(total); tokenId++) {
+        try {
+          const owner = await contract.ownerOf(tokenId);
+          if (owner.toLowerCase() === walletAddress.toLowerCase()) {
+            const land = await contract.getLandDetails(tokenId);
 
-        ownedNFTs.push({
-          tokenId: tokenId.toString(),
-          titleId: land[0],
-          location: land[1],
-          size: land[2],
-          uri: land[3],
-          image: await fetchImageFromMetadata(land[3]),
-          owner: land[4],
-        });
+            ownedNFTs.push({
+              tokenId: tokenId.toString(),
+              titleId: land[0],
+              location: land[1],
+              size: land[2],
+              uri: land[3],
+              image: await fetchImageFromMetadata(land[3]),
+              owner: land[4],
+            });
+          }
+        } catch (err) {
+          // Skip if token doesn't exist or fails
+          continue;
+        }
       }
 
       setLandNFTs(ownedNFTs);
     } catch (error) {
       console.error("Error fetching land NFTs:", error);
+      alert("⚠️ Could not fetch NFTs. See console for details.");
     }
 
     setLoading(false);
@@ -72,7 +80,9 @@ export default function LandownerPage() {
         <img src="/images/logo.png" alt="ArdhiChain Logo" className="logo" />
         <h1>Landowner Dashboard</h1>
         {!walletAddress ? (
-          <button className="btn connectBtn" onClick={connectWallet}>Connect Wallet</button>
+          <button className="btn connectBtn" onClick={connectWallet}>
+            Connect Wallet
+          </button>
         ) : (
           <p className="walletInfo">Wallet: {walletAddress}</p>
         )}
@@ -106,19 +116,5 @@ export default function LandownerPage() {
                   <td>{land.titleId}</td>
                   <td>{land.location}</td>
                   <td>{land.size}</td>
-                  <td><a href={land.uri} target="_blank" rel="noreferrer">View</a></td>
                   <td>
-                    {land.image ? (
-                      <img src={land.image} alt="Deed" className="nftImage" />
-                    ) : 'N/A'}
-                  </td>
-                  <td>{land.owner}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </main>
-    </div>
-  );
-}
+                    <a href={land.uri} target="_blank" rel="nore_
