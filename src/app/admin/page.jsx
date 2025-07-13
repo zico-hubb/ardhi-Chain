@@ -27,7 +27,6 @@ export default function Admin() {
     `https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`
   );
 
-  // Auto-connect wallet
   useEffect(() => {
     const checkConnection = async () => {
       if (typeof window.ethereum !== 'undefined') {
@@ -35,6 +34,7 @@ export default function Admin() {
           const accounts = await window.ethereum.request({ method: 'eth_accounts' });
           if (accounts.length > 0) {
             setCurrentAccount(accounts[0]);
+            await fetchAllLands();
           }
         } catch (err) {
           console.error('Wallet check failed:', err);
@@ -47,14 +47,10 @@ export default function Admin() {
   const connectWallet = async () => {
     try {
       if (!window.ethereum) return alert('🛑 MetaMask not detected');
-
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      if (accounts.length === 0) {
-        alert('❌ No wallet connected');
-        return;
-      }
-
+      if (accounts.length === 0) return alert('❌ No wallet connected');
       setCurrentAccount(accounts[0]);
+      await fetchAllLands();
     } catch (error) {
       console.error('Wallet connection error:', error);
       alert('❌ Failed to connect wallet. See console.');
@@ -77,7 +73,6 @@ export default function Admin() {
       const provider = new BrowserProvider(window.ethereum);
       await provider.send('eth_requestAccounts', []);
       const signer = await provider.getSigner();
-
       const contract = new Contract(CONTRACT_ADDRESS, contractABI, signer);
 
       console.log('📤 Sending transaction...');
@@ -86,10 +81,9 @@ export default function Admin() {
 
       console.log('✅ Minted:', tx.hash);
       alert('✅ Land NFT minted!');
-      fetchAllLands();
+      await fetchAllLands();
     } catch (error) {
       console.error('❌ Mint failed:', error);
-
       if (error?.reason) {
         alert(`⚠️ Contract error: ${error.reason}`);
       } else if (error?.code === 'INVALID_ARGUMENT') {
@@ -103,13 +97,34 @@ export default function Admin() {
   };
 
   const fetchAllLands = async () => {
-    setMintedLands((prev) => [
-      ...prev,
-      {
-        id: prev.length,
-        ...landInputs,
-      },
-    ]);
+    try {
+      const provider = new BrowserProvider(window.ethereum);
+      const signer = await provider.getSigner();
+      const contract = new Contract(CONTRACT_ADDRESS, contractABI, signer);
+
+      const total = await contract.nextTokenId();
+      const allLands = [];
+
+      for (let tokenId = 0; tokenId < Number(total); tokenId++) {
+        try {
+          const land = await contract.getLandDetails(tokenId);
+          allLands.push({
+            tokenId: tokenId.toString(),
+            titleId: land[0],
+            location: land[1],
+            size: land[2],
+            metadataURI: land[3],
+            to: land[4],
+          });
+        } catch (err) {
+          console.warn(`⚠️ Could not fetch tokenId ${tokenId}:`, err);
+        }
+      }
+
+      setMintedLands(allLands);
+    } catch (error) {
+      console.error('❌ Failed to fetch lands:', error);
+    }
   };
 
   return (
@@ -141,6 +156,7 @@ export default function Admin() {
           <table>
             <thead>
               <tr>
+                <th>Token ID</th>
                 <th>Title ID</th>
                 <th>Location</th>
                 <th>Size</th>
@@ -151,11 +167,14 @@ export default function Admin() {
             <tbody>
               {mintedLands.map((land, index) => (
                 <tr key={index}>
+                  <td>{land.tokenId}</td>
                   <td>{land.titleId}</td>
                   <td>{land.location}</td>
                   <td>{land.size}</td>
                   <td>
-                    <a href={land.metadataURI} target="_blank" rel="noopener noreferrer">View</a>
+                    <a href={land.metadataURI} target="_blank" rel="noopener noreferrer">
+                      View
+                    </a>
                   </td>
                   <td>{land.to}</td>
                 </tr>
