@@ -12,59 +12,69 @@ export default function LandownerPage() {
   const [loading, setLoading] = useState(false);
 
   const connectWallet = async () => {
-    if (!window.ethereum) return alert("Please install MetaMask");
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    setWalletAddress(accounts[0]);
+    if (!window.ethereum) {
+      alert('🦊 Please install MetaMask to use this feature.');
+      return;
+    }
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      setWalletAddress(accounts[0]);
+    } catch {
+      alert('⚠️ Wallet connection failed.');
+    }
   };
 
   const fetchLandNFTs = async () => {
-    if (!walletAddress) return;
+    if (!walletAddress || !CONTRACT_ADDRESS) {
+      console.warn('Missing wallet or contract address.');
+      return;
+    }
+
     setLoading(true);
 
     try {
       const provider = new BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const contract = new Contract(CONTRACT_ADDRESS, contractABI.abi, signer);
-
       const total = await contract.nextTokenId();
       const ownedNFTs = [];
 
       for (let tokenId = 0; tokenId < Number(total); tokenId++) {
         try {
           const owner = await contract.ownerOf(tokenId);
-          if (owner.toLowerCase() === walletAddress.toLowerCase()) {
-            const land = await contract.getLandDetails(tokenId);
+          if (owner.toLowerCase() !== walletAddress.toLowerCase()) continue;
 
-            ownedNFTs.push({
-              tokenId: tokenId.toString(),
-              titleId: land[0],
-              location: land[1],
-              size: land[2],
-              uri: land[3],
-              image: await fetchImageFromMetadata(land[3]),
-              owner: land[4],
-            });
-          }
-        } catch (err) {
+          const land = await contract.getLandDetails(tokenId);
+
+          ownedNFTs.push({
+            tokenId: tokenId.toString(),
+            titleId: land[0],
+            location: land[1],
+            size: land[2],
+            uri: land[3],
+            image: await fetchImageFromMetadata(land[3]),
+            owner: land[4],
+          });
+        } catch {
           continue;
         }
       }
 
       setLandNFTs(ownedNFTs);
-    } catch (error) {
-      console.error("Error fetching land NFTs:", error);
-      alert("⚠️ Could not fetch NFTs. See console for details.");
+    } catch (err) {
+      console.error('🛑 Failed to fetch NFTs:', err);
+      alert('Could not load NFTs. Please try again.');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const fetchImageFromMetadata = async (uri) => {
     try {
-      const response = await fetch(uri);
-      const data = await response.json();
+      const res = await fetch(uri);
+      const data = await res.json();
       return data.image;
-    } catch (error) {
+    } catch {
       return null;
     }
   };
@@ -76,7 +86,7 @@ export default function LandownerPage() {
   return (
     <div className="container">
       <header className="header">
-        <img src="/images/logo.png" alt="ArdhiChain Logo" className="logo" />
+        <img src="/images/logo.jpeg" alt="ArdhiChain Logo" className="logo" />
         <h1>Landowner Dashboard</h1>
         {!walletAddress ? (
           <button className="btn connectBtn" onClick={connectWallet}>
@@ -116,16 +126,12 @@ export default function LandownerPage() {
                   <td>{land.location}</td>
                   <td>{land.size}</td>
                   <td>
-                    <a href={land.uri} target="_blank" rel="noopener noreferrer">
-                      View Metadata
-                    </a>
+                    <a href={land.uri} target="_blank" rel="noreferrer">View</a>
                   </td>
                   <td>
                     {land.image ? (
-                      <img src={land.image} alt="Title Deed" width="60" />
-                    ) : (
-                      'N/A'
-                    )}
+                      <img src={land.image} alt="Deed" className="nftImage" />
+                    ) : 'N/A'}
                   </td>
                   <td>{land.owner}</td>
                 </tr>
