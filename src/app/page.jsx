@@ -22,7 +22,7 @@ export default function HomePage() {
 
       <div className="container">
         <header className="header">
-          <img src="/images/logo.png" alt="ArdhiChain Logo" className="logo" />
+          <img src="/images/logo.jpeg" alt="ArdhiChain Logo" className="logo" />
           <div className="walletInfo">Wallet: 0x123...456</div>
         </header>
 
