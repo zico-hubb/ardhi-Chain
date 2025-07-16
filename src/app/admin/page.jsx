@@ -130,7 +130,7 @@ export default function Admin() {
   return (
     <div className="admin-container">
       <header className="admin-header">
-        <h1>ArdhiChain Admin Panel</h1>
+        <h1>SmartLands Admin Panel</h1>
         <button className="connect-btn" onClick={connectWallet}>
           {currentAccount
             ? `Connected: ${currentAccount.slice(0, 6)}...${currentAccount.slice(-4)}`
