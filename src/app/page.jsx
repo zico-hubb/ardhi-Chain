@@ -17,7 +17,7 @@ export default function HomePage() {
   return (
     <>
       <Head>
-        <title>ArdhiChain</title>
+        <title>Smartlands</title>
       </Head>
 
       <div className="container">
@@ -27,9 +27,9 @@ export default function HomePage() {
         </header>
 
         <main className="main">
-          <h1 className="title">ArdhiChain</h1>
+          <h1 className="title">Smartlands</h1>
           <p className="description">
-            ArdhiChain is a blockchain-powered land registry system enabling secure, transparent,
+            SmartLands is a blockchain-powered land registry system enabling secure, transparent,
             and verifiable land ownership through NFTs. It empowers landowners and provides
             seamless oversight for administrators. Built for trust, built on-chain.
           </p>
